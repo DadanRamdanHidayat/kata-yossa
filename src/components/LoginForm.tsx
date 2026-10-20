@@ -12,6 +12,7 @@ const primary =
 export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
   const router = useRouter();
   const [step, setStep] = useState<"email" | "otp">("email");
+  const [viaAdmin, setViaAdmin] = useState(false); // kode diberikan admin, bukan dikirim lewat email
   const [email, setEmail] = useState(defaultEmail);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,14 @@ export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string
     const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
     setLoading(false);
     if (error) return setError("Gagal mengirim kode. Periksa email Anda lalu coba lagi.");
+    setViaAdmin(false);
+    setStep("otp");
+  }
+
+  function enterAdminCode() {
+    if (!/\S+@\S+\.\S+/.test(email)) return setError("Isi email Anda terlebih dahulu.");
+    setError("");
+    setViaAdmin(true);
     setStep("otp");
   }
 
@@ -49,6 +58,9 @@ export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button disabled={loading} className={primary}>{loading ? "Mengirim..." : "Kirim kode OTP"}</button>
+        <button type="button" onClick={enterAdminCode} className="w-full text-center text-xs font-medium text-blue-600 hover:underline">
+          Punya kode dari admin? Masukkan kode
+        </button>
       </form>
     );
   }
@@ -56,7 +68,11 @@ export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string
   return (
     <form onSubmit={verify} className="space-y-4">
       <p className="text-xs text-slate-500">
-        Kami mengirim kode 6 digit ke <span className="font-medium text-slate-900">{email}</span>.
+        {viaAdmin ? (
+          <>Masukkan kode yang diberikan admin untuk <span className="font-medium text-slate-900">{email}</span>.</>
+        ) : (
+          <>Kami mengirim kode 6 digit ke <span className="font-medium text-slate-900">{email}</span>.</>
+        )}
       </p>
       <input
         inputMode="numeric"
@@ -71,9 +87,16 @@ export default function LoginForm({ defaultEmail = "" }: { defaultEmail?: string
       {error && <p className="text-xs text-red-600">{error}</p>}
       <button disabled={loading || otp.length < 6} className={primary}>{loading ? "Memverifikasi..." : "Verifikasi & masuk"}</button>
       <div className="flex justify-between text-xs">
-        <button type="button" onClick={() => setStep("email")} className="text-slate-500 hover:text-slate-900">Ganti email</button>
-        <button type="button" onClick={() => sendOtp()} className="font-medium text-blue-600 hover:underline">Kirim ulang kode</button>
+        <button type="button" onClick={() => { setStep("email"); setViaAdmin(false); setOtp(""); setError(""); }} className="text-slate-500 hover:text-slate-900">Ganti email</button>
+        <button type="button" onClick={() => sendOtp()} className="font-medium text-blue-600 hover:underline">
+          {viaAdmin ? "Kirim kode lewat email" : "Kirim ulang kode"}
+        </button>
       </div>
+      {!viaAdmin && (
+        <p className="text-center text-[11px] text-slate-400">
+          Email belum masuk? Cek folder Spam, atau minta kode masuk ke admin lalu pilih &quot;Punya kode dari admin&quot;.
+        </p>
+      )}
     </form>
   );
 }
