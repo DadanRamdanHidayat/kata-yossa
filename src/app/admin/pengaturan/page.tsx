@@ -15,6 +15,7 @@ function actionLabel(a: string) {
   if (a === "set_status:pending") return "Mengembalikan ke menunggu";
   if (a === "update_settings") return "Mengubah pengaturan";
   if (a === "view_conversation") return "Membuka riwayat chat";
+  if (a === "create_login_code") return "Membuat kode masuk";
   return a;
 }
 
