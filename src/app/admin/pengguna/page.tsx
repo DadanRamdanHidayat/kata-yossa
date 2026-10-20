@@ -1,5 +1,6 @@
 import { count, desc, eq, sum } from "drizzle-orm";
 import AdminShell from "@/components/AdminShell";
+import LoginCodeForm from "@/components/LoginCodeForm";
 import UserTable from "@/components/UserTable";
 import { db } from "@/db";
 import { conversations, messages, usageLogs, user } from "@/db/schema";
@@ -60,6 +61,8 @@ export default async function KelolaPenggunaPage() {
             </div>
           ))}
         </div>
+
+        <LoginCodeForm />
 
         <UserTable
           users={rows}
