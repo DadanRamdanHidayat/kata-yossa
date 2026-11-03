@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -20,7 +21,23 @@ export const auth = betterAuth({
       status: { type: "string", defaultValue: "pending", input: false },
     },
   },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // pengguna biasa: 7 hari
+    updateAge: 60 * 60 * 24 * 365, // matikan perpanjangan otomatis, masa berlaku tetap dihitung dari saat login
+  },
   databaseHooks: {
+    session: {
+      create: {
+        // Admin: sesi hanya 24 jam sejak OTP dimasukkan, besoknya wajib OTP lagi.
+        before: async (sess) => {
+          const [u] = await db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, sess.userId)).limit(1);
+          if (u?.role === "admin") {
+            return { data: { ...sess, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } };
+          }
+          return { data: sess };
+        },
+      },
+    },
     user: {
       create: {
         // Role & status ditentukan server, bukan input pengguna.
