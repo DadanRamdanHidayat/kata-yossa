@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Logo from "@/components/Logo";
 
 const BENEFITS = [
@@ -13,9 +12,6 @@ export default function Landing() {
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 to-slate-50">
       <nav className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur lg:px-12">
         <Logo />
-        <Link href="/masuk" className="rounded-lg bg-navy px-5 py-2 text-sm font-medium text-white hover:bg-blue-900">
-          Masuk
-        </Link>
       </nav>
 
       <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-4 py-16 text-center">
