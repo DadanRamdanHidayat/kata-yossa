@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { adminWaLink } from "@/lib/contact";
 
 const input =
   "w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20";
@@ -105,14 +106,21 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
     );
   }
 
+  const waLink = adminWaLink(`Halo admin Kata Yossa, saya ingin meminta kode masuk untuk email ${email}.`);
+
   return (
     <form onSubmit={verify} className="space-y-4">
       <p className="text-xs text-slate-500">
         Masukkan kode 6 digit untuk <span className="font-medium text-slate-900">{email}</span>.
       </p>
-      <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-        Pengguna: minta kode ke admin Kata Yossa. Admin: kode dikirim ke email Anda.
-      </p>
+      <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+        <p>Pengguna: minta kode ke admin Kata Yossa. Admin: kode dikirim ke email Anda.</p>
+        {waLink && (
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-medium text-blue-600 hover:underline">
+            Minta kode lewat WhatsApp
+          </a>
+        )}
+      </div>
       <input
         inputMode="numeric"
         autoComplete="one-time-code"
