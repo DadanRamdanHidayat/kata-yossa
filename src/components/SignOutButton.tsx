@@ -8,10 +8,14 @@ export default function SignOutButton({
   className = "",
   tone = "light",
   withIcon = false,
+  forgetDevice = false,
+  label = "Keluar",
 }: {
   className?: string;
   tone?: "light" | "dark";
   withIcon?: boolean;
+  forgetDevice?: boolean; // true: hapus juga akses perangkat ini (OTP lagi saat masuk berikutnya)
+  label?: string;
 }) {
   const router = useRouter();
   const color =
@@ -21,6 +25,8 @@ export default function SignOutButton({
   return (
     <button
       onClick={async () => {
+        // Pelanggan aktif tetap dikenali di perangkat ini; "forgetDevice" menghapus pengenalan itu.
+        await fetch("/api/device", { method: forgetDevice ? "DELETE" : "POST" }).catch(() => {});
         await authClient.signOut();
         router.push("/");
         router.refresh();
@@ -28,7 +34,7 @@ export default function SignOutButton({
       className={`inline-flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${color} ${className}`}
     >
       {withIcon && <LogOut className="h-4 w-4" />}
-      Keluar
+      {label}
     </button>
   );
 }
