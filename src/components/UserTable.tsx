@@ -38,6 +38,7 @@ export default function UserTable({
   description = "Daftar akun pemohon dan status akses",
   showUsage = false,
   showSubscription = false,
+  showOtp = false,
   filters = true,
   footer,
 }: {
@@ -47,6 +48,7 @@ export default function UserTable({
   description?: string;
   showUsage?: boolean;
   showSubscription?: boolean;
+  showOtp?: boolean;
   filters?: boolean;
   footer?: React.ReactNode;
 }) {
@@ -54,6 +56,9 @@ export default function UserTable({
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otp, setOtp] = useState<{ email: string; code: string; minutes: number } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const rows = users.filter(
     (u) => u.email.toLowerCase().includes(q.toLowerCase()) && (filter === "all" || u.status === filter),
@@ -91,6 +96,30 @@ export default function UserTable({
     router.refresh();
   }
 
+  async function makeOtp(email: string, id: string | null = null) {
+    setBusy(id ?? "new-otp");
+    const res = await fetch("/api/admin/otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setBusy(null);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error ?? "Gagal membuat kode.");
+    setOtp({ email: data.email, code: data.code, minutes: data.expiresInMinutes });
+    setCopied(false);
+    if (!id) setOtpEmail("");
+    router.refresh();
+  }
+
+  async function copyOtp() {
+    if (!otp) return;
+    await navigator.clipboard
+      .writeText(`Kode masuk Kata Yossa: ${otp.code} (berlaku ${otp.minutes} menit, sekali pakai)`)
+      .catch(() => {});
+    setCopied(true);
+  }
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -110,6 +139,44 @@ export default function UserTable({
           </div>
         )}
       </div>
+      {showOtp && (
+        <div className="space-y-3 border-b border-slate-200 bg-slate-50/60 p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (otpEmail.trim()) makeOtp(otpEmail.trim());
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
+            <input
+              type="email"
+              required
+              value={otpEmail}
+              onChange={(e) => setOtpEmail(e.target.value)}
+              placeholder="Email pengguna (baru atau lama) untuk dibuatkan kode masuk"
+              className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-blue-600"
+            />
+            <button disabled={busy === "new-otp"} className="rounded-lg bg-navy px-4 py-2 text-xs font-medium text-white hover:bg-blue-900 disabled:opacity-60">
+              {busy === "new-otp" ? "Membuat..." : "Buat kode masuk"}
+            </button>
+          </form>
+          {otp && (
+            <div className="flex flex-col gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs text-slate-600">
+                Kode untuk <span className="font-semibold text-slate-900">{otp.email}</span>
+                <div className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-navy">{otp.code}</div>
+                <p className="mt-1">Berlaku {otp.minutes} menit dan hanya bisa dipakai sekali. Kode ini tidak akan ditampilkan lagi.</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={copyOtp} className="rounded bg-white px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100">
+                  {copied ? "Tersalin" : "Salin pesan"}
+                </button>
+                <button onClick={() => setOtp(null)} className="rounded px-3 py-1.5 text-xs text-slate-500 hover:bg-white">Tutup</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 font-semibold text-slate-500">
@@ -164,6 +231,11 @@ export default function UserTable({
                             <option key={p.value} value={p.value}>{p.label}</option>
                           ))}
                         </select>
+                      )}
+                      {showOtp && u.role !== "admin" && u.status !== "rejected" && (
+                        <button disabled={busy === u.id} onClick={() => makeOtp(u.email, u.id)} className="rounded bg-blue-50 px-2 py-1 font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50">
+                          Buat OTP
+                        </button>
                       )}
                       {u.status !== "approved" && (
                         <button disabled={busy === u.id} onClick={() => setStatus(u, "approved")} className="rounded bg-emerald-50 px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
