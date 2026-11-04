@@ -103,3 +103,15 @@ export const trustedDevices = pgTable("trusted_devices", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at").notNull().defaultNow(),
 });
+
+// Kode masuk satu kali yang dibuat admin untuk pengguna non-admin (dikirim admin lewat WhatsApp dsb).
+// Yang disimpan hanya hash-nya; satu kode aktif per pengguna.
+export const loginCodes = pgTable("login_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
