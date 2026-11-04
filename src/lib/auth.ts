@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
@@ -25,6 +26,17 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // pengguna biasa: 7 hari
     updateAge: 60 * 60 * 24 * 365, // matikan perpanjangan otomatis, masa berlaku tetap dihitung dari saat login
+  },
+  hooks: {
+    // OTP lewat email hanya untuk admin. Pengguna lain masuk dengan kode dari admin (/api/auth/code/sign-in).
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email-otp") {
+        const email = String((ctx.body as { email?: unknown } | undefined)?.email ?? "").trim().toLowerCase();
+        if (!adminEmails.includes(email)) {
+          throw new APIError("UNAUTHORIZED", { message: "Kode salah atau sudah kedaluwarsa." });
+        }
+      }
+    }),
   },
   databaseHooks: {
     session: {
@@ -56,6 +68,8 @@ export const auth = betterAuth({
       otpLength: 6,
       expiresIn: 300,
       async sendVerificationOTP({ email, otp }) {
+        // Hanya admin yang menerima OTP lewat email; untuk email lain tidak ada yang dikirim.
+        if (!adminEmails.includes(email.trim().toLowerCase())) return;
         if (process.env.NODE_ENV !== "production") {
           console.log(`\n[DEV] OTP untuk ${email}: ${otp}\n`);
         }
