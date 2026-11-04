@@ -18,6 +18,7 @@ function actionLabel(a: string) {
     const m: Record<string, string> = { "1d": "1 hari", "1w": "1 minggu", "1m": "1 bulan", "3m": "3 bulan", "1y": "1 tahun" };
     return `Mengatur langganan ${m[a.split(":")[1]] ?? ""}`.trim();
   }
+  if (a === "create_otp") return "Membuat kode masuk";
   if (a === "update_settings") return "Mengubah pengaturan";
   if (a === "view_conversation") return "Membuka riwayat chat";
   return a;
