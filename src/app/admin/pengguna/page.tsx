@@ -72,6 +72,7 @@ export default async function KelolaPenggunaPage() {
           description="Semua akun yang terdaftar, beserta jumlah pesan dan token yang dipakai"
           showUsage
           showSubscription
+          showOtp
         />
       </div>
     </AdminShell>
