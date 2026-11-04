@@ -1,4 +1,5 @@
 import Logo from "@/components/Logo";
+import { adminWaLink } from "@/lib/contact";
 
 const BENEFITS = [
   { title: "Analisis berbasis data", text: "Evaluasi potensi dan risiko pasar secara terukur." },
@@ -8,6 +9,7 @@ const BENEFITS = [
 ];
 
 export default function Landing() {
+  const waLink = adminWaLink("Halo admin Kata Yossa, saya ingin meminta akses.");
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 to-slate-50">
       <nav className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur lg:px-12">
@@ -23,8 +25,18 @@ export default function Landing() {
 
         <form action="/masuk" className="flex w-full max-w-md flex-col gap-2 rounded-xl border border-slate-200 bg-white p-1.5 shadow-md sm:flex-row">
           <input name="email" type="email" required placeholder="Masukkan email Anda" className="flex-1 rounded-lg px-3.5 py-2.5 text-sm outline-none" />
-          <button className="rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-900">Mulai sekarang</button>
+          <button className="rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-900">Masuk</button>
         </form>
+        <p className="mt-3 text-xs text-slate-500">
+          Akses Kata Yossa diberikan oleh admin. Belum punya akses?{" "}
+          {waLink ? (
+            <a href={waLink} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">
+              Hubungi admin
+            </a>
+          ) : (
+            "Hubungi admin."
+          )}
+        </p>
 
         <div className="mt-16 grid w-full grid-cols-2 gap-4 text-left md:grid-cols-4">
           {BENEFITS.map((b) => (
