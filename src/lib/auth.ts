@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { trustedDevice } from "./trusted-device-plugin";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const adminEmails = (process.env.ADMIN_EMAILS ?? "")
@@ -70,6 +71,7 @@ export const auth = betterAuth({
         }
       },
     }),
+    trustedDevice(),
     nextCookies(),
   ],
 });
