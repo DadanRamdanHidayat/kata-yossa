@@ -9,6 +9,7 @@ export const user = pgTable("user", {
   image: text("image"),
   role: text("role").notNull().default("user"), // user | admin
   status: text("status").notNull().default("pending"), // pending | approved | rejected
+  subscriptionUntil: timestamp("subscription_until"), // null = tanpa langganan; selama masih berlaku, perangkat tepercaya boleh masuk tanpa OTP
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -90,4 +91,27 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   updatedBy: text("updated_by"),
+});
+
+// Perangkat (browser) yang sudah lolos OTP milik pelanggan berlangganan.
+// Token asli hanya ada di cookie browser; di sini hanya hash-nya.
+export const trustedDevices = pgTable("trusted_devices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at").notNull().defaultNow(),
+});
+
+// Kode masuk satu kali yang dibuat admin untuk pengguna non-admin (dikirim admin lewat WhatsApp dsb).
+// Yang disimpan hanya hash-nya; satu kode aktif per pengguna.
+export const loginCodes = pgTable("login_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

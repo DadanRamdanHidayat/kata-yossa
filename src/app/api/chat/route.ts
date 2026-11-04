@@ -6,6 +6,7 @@ import { conversations, messages, usageLogs } from "@/db/schema";
 import { askAI } from "@/lib/ai";
 import { getSession } from "@/lib/guards";
 import { getSettings } from "@/lib/settings";
+import { startOfDayWIB } from "@/lib/time";
 
 const Body = z.object({
   message: z.string().trim().min(1).max(4000),
@@ -27,8 +28,7 @@ export async function POST(req: Request) {
 
   // 2. Batas pesan harian
   const { dailyMessageLimit: limit } = await getSettings();
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const startOfDay = startOfDayWIB(); // reset tengah malam WIB, bukan zona waktu server
   const [{ n }] = await db
     .select({ n: count() })
     .from(messages)
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
 
   // 3. Percakapan harus milik pengguna ini
   let conversationId = parsed.data.conversationId ?? null;
+  let createdConversation = false;
   if (conversationId) {
     const [owned] = await db
       .select({ id: conversations.id })
@@ -50,9 +51,13 @@ export async function POST(req: Request) {
       .values({ userId, title: message.slice(0, 50) })
       .returning({ id: conversations.id });
     conversationId = created.id;
+    createdConversation = true;
   }
 
-  await db.insert(messages).values({ conversationId, role: "user", content: message });
+  const [userMsg] = await db
+    .insert(messages)
+    .values({ conversationId, role: "user", content: message })
+    .returning({ id: messages.id });
 
   // 4. Ambil 20 pesan terakhir sebagai konteks
   const recent = await db
@@ -69,6 +74,9 @@ export async function POST(req: Request) {
     result = await askAI(history);
   } catch (e) {
     console.error("AI error:", e);
+    // Jangan biarkan pesan tanpa balasan menghabiskan jatah harian atau mengotori riwayat.
+    await db.delete(messages).where(eq(messages.id, userMsg.id));
+    if (createdConversation) await db.delete(conversations).where(eq(conversations.id, conversationId));
     return fail("Layanan AI sedang bermasalah. Coba lagi sebentar lagi.", 502);
   }
 

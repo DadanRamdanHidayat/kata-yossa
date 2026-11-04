@@ -33,6 +33,10 @@ export default async function KelolaPenggunaPage() {
     status: u.status,
     role: u.role,
     createdAt: u.createdAt.toLocaleDateString("id-ID", { dateStyle: "medium", timeZone: TZ }),
+    subscriptionUntil: u.subscriptionUntil
+      ? u.subscriptionUntil.toLocaleDateString("id-ID", { dateStyle: "medium", timeZone: TZ })
+      : null,
+    subscriptionActive: !!u.subscriptionUntil && u.subscriptionUntil.getTime() > Date.now(),
     messages: msgMap.get(u.id) ?? 0,
     tokens: tokMap.get(u.id) ?? 0,
   }));
@@ -48,7 +52,7 @@ export default async function KelolaPenggunaPage() {
     <AdminShell active="pengguna" email={me.email}>
       <div className="border-b border-slate-200 bg-white px-6 py-4">
         <h2 className="text-lg font-bold text-navy">Kelola Pengguna</h2>
-        <p className="text-xs text-slate-500">Setujui atau tolak akses, dan pantau pemakaian tiap akun</p>
+        <p className="text-xs text-slate-500">Setujui atau tolak akses, atur langganan bebas OTP, dan pantau pemakaian tiap akun</p>
       </div>
 
       <div className="mx-auto max-w-6xl space-y-6 p-6">
@@ -67,6 +71,8 @@ export default async function KelolaPenggunaPage() {
           title="Daftar Pengguna"
           description="Semua akun yang terdaftar, beserta jumlah pesan dan token yang dipakai"
           showUsage
+          showSubscription
+          showOtp
         />
       </div>
     </AdminShell>

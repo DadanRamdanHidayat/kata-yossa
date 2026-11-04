@@ -13,6 +13,12 @@ function actionLabel(a: string) {
   if (a === "set_status:approved") return "Menyetujui akses";
   if (a === "set_status:rejected") return "Menolak akses";
   if (a === "set_status:pending") return "Mengembalikan ke menunggu";
+  if (a === "set_subscription:none") return "Mencabut langganan";
+  if (a.startsWith("set_subscription:")) {
+    const m: Record<string, string> = { "1d": "1 hari", "1w": "1 minggu", "1m": "1 bulan", "3m": "3 bulan", "1y": "1 tahun" };
+    return `Mengatur langganan ${m[a.split(":")[1]] ?? ""}`.trim();
+  }
+  if (a === "create_otp") return "Membuat kode masuk";
   if (a === "update_settings") return "Mengubah pengaturan";
   if (a === "view_conversation") return "Membuka riwayat chat";
   return a;

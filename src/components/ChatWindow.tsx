@@ -3,6 +3,7 @@
 import { Send, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Markdown from "./Markdown";
 import { LogoMark } from "./Logo";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -100,8 +101,8 @@ export default function ChatWindow({
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100">
                     <LogoMark size={16} />
                   </span>
-                  <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-md">
-                    {m.content}
+                  <div className="min-w-0 max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-xl">
+                    <Markdown>{m.content}</Markdown>
                   </div>
                 </div>
               ),
