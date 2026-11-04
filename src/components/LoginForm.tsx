@@ -24,7 +24,7 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
     setError("");
     const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
     setLoading(false);
-    if (error) return setError("Gagal mengirim kode. Periksa email Anda lalu coba lagi.");
+    if (error) return setError("Gagal memproses email. Periksa email Anda lalu coba lagi.");
     setStep("otp");
   }
 
@@ -32,10 +32,18 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error } = await authClient.signIn.emailOtp({ email, otp });
-    if (error) {
-      setLoading(false);
-      return setError("Kode salah atau sudah kedaluwarsa.");
+    // Pengguna biasa: kode dari admin. Admin: kode yang dikirim ke emailnya.
+    const viaAdminCode = await fetch("/api/auth/code/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code: otp }),
+    }).catch(() => null);
+    if (!viaAdminCode?.ok) {
+      const { error } = await authClient.signIn.emailOtp({ email, otp });
+      if (error) {
+        setLoading(false);
+        return setError("Kode salah atau sudah kedaluwarsa.");
+      }
     }
     // Kalau langganan pengguna aktif, tandai browser ini agar berikutnya bisa masuk tanpa OTP.
     await fetch("/api/device", { method: "POST" }).catch(() => {});
@@ -92,7 +100,7 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
           <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@domain.com" className={input} />
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
-        <button disabled={loading} className={primary}>{loading ? "Mengirim..." : "Kirim kode OTP"}</button>
+        <button disabled={loading} className={primary}>{loading ? "Memproses..." : "Lanjut"}</button>
       </form>
     );
   }
@@ -100,7 +108,10 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
   return (
     <form onSubmit={verify} className="space-y-4">
       <p className="text-xs text-slate-500">
-        Kami mengirim kode 6 digit ke <span className="font-medium text-slate-900">{email}</span>.
+        Masukkan kode 6 digit untuk <span className="font-medium text-slate-900">{email}</span>.
+      </p>
+      <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+        Pengguna: minta kode ke admin Kata Yossa. Admin: kode dikirim ke email Anda.
       </p>
       <input
         inputMode="numeric"
@@ -116,7 +127,7 @@ export default function LoginForm({ defaultEmail = "", trustedEmail }: { default
       <button disabled={loading || otp.length < 6} className={primary}>{loading ? "Memverifikasi..." : "Verifikasi & masuk"}</button>
       <div className="flex justify-between text-xs">
         <button type="button" onClick={() => setStep("email")} className="text-slate-500 hover:text-slate-900">Ganti email</button>
-        <button type="button" onClick={() => sendOtp()} className="font-medium text-blue-600 hover:underline">Kirim ulang kode</button>
+        <button type="button" onClick={() => sendOtp()} className="font-medium text-blue-600 hover:underline">Kirim ulang (admin)</button>
       </div>
     </form>
   );
