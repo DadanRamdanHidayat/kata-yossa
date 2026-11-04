@@ -11,7 +11,18 @@ type Row = {
   createdAt: string;
   messages?: number;
   tokens?: number;
+  subscriptionUntil?: string | null; // sudah diformat (WIB)
+  subscriptionActive?: boolean;
 };
+
+const PLANS = [
+  { value: "1d", label: "1 hari" },
+  { value: "1w", label: "1 minggu" },
+  { value: "1m", label: "1 bulan" },
+  { value: "3m", label: "3 bulan" },
+  { value: "1y", label: "1 tahun" },
+  { value: "none", label: "Tanpa langganan" },
+];
 
 const LABEL: Record<string, string> = { pending: "Menunggu", approved: "Disetujui", rejected: "Ditolak" };
 const BADGE: Record<string, string> = {
@@ -26,6 +37,7 @@ export default function UserTable({
   title = "Pengguna Terbaru",
   description = "Daftar akun pemohon dan status akses",
   showUsage = false,
+  showSubscription = false,
   filters = true,
   footer,
 }: {
@@ -34,6 +46,7 @@ export default function UserTable({
   title?: string;
   description?: string;
   showUsage?: boolean;
+  showSubscription?: boolean;
   filters?: boolean;
   footer?: React.ReactNode;
 }) {
@@ -56,6 +69,25 @@ export default function UserTable({
     });
     setBusy(null);
     if (!res.ok) alert((await res.json()).error ?? "Gagal mengubah status.");
+    router.refresh();
+  }
+
+  async function setPlan(u: Row, plan: string) {
+    if (!plan) return;
+    const label = PLANS.find((p) => p.value === plan)?.label ?? plan;
+    const msg =
+      plan === "none"
+        ? `Cabut langganan ${u.email}? Perangkatnya akan diminta OTP lagi.`
+        : `Atur langganan ${u.email} menjadi ${label}, dihitung dari sekarang?`;
+    if (!confirm(msg)) return router.refresh();
+    setBusy(u.id);
+    const res = await fetch("/api/admin/langganan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: u.id, plan }),
+    });
+    setBusy(null);
+    if (!res.ok) alert((await res.json()).error ?? "Gagal mengatur langganan.");
     router.refresh();
   }
 
@@ -85,6 +117,7 @@ export default function UserTable({
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Daftar</th>
+              {showSubscription && <th className="px-4 py-3">Langganan</th>}
               {showUsage && <th className="px-4 py-3 text-right">Pesan</th>}
               {showUsage && <th className="px-4 py-3 text-right">Token</th>}
               <th className="px-4 py-3 text-right">Aksi</th>
@@ -101,11 +134,37 @@ export default function UserTable({
                   <span className={`rounded px-2 py-0.5 font-semibold ${BADGE[u.status]}`}>{LABEL[u.status]}</span>
                 </td>
                 <td className="px-4 py-3 text-slate-500">{u.createdAt}</td>
+                {showSubscription && (
+                  <td className="px-4 py-3">
+                    {u.role === "admin" ? (
+                      <span className="text-slate-400">-</span>
+                    ) : u.subscriptionUntil ? (
+                      <span className={u.subscriptionActive ? "font-medium text-emerald-700" : "text-slate-400"}>
+                        {u.subscriptionActive ? `Aktif s.d. ${u.subscriptionUntil}` : `Berakhir ${u.subscriptionUntil}`}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">Tanpa langganan</span>
+                    )}
+                  </td>
+                )}
                 {showUsage && <td className="px-4 py-3 text-right text-slate-600">{(u.messages ?? 0).toLocaleString("id-ID")}</td>}
                 {showUsage && <td className="px-4 py-3 text-right text-slate-600">{(u.tokens ?? 0).toLocaleString("id-ID")}</td>}
                 <td className="px-4 py-3 text-right">
                   {u.id !== currentUserId && (
-                    <div className="inline-flex gap-1.5">
+                    <div className="inline-flex items-center gap-1.5">
+                      {showSubscription && u.status === "approved" && u.role !== "admin" && (
+                        <select
+                          disabled={busy === u.id}
+                          value=""
+                          onChange={(e) => setPlan(u, e.target.value)}
+                          className="rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 disabled:opacity-50"
+                        >
+                          <option value="">Atur langganan…</option>
+                          {PLANS.map((p) => (
+                            <option key={p.value} value={p.value}>{p.label}</option>
+                          ))}
+                        </select>
+                      )}
                       {u.status !== "approved" && (
                         <button disabled={busy === u.id} onClick={() => setStatus(u, "approved")} className="rounded bg-emerald-50 px-2 py-1 font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
                           Setujui
@@ -123,7 +182,7 @@ export default function UserTable({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={showUsage ? 6 : 4} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={4 + (showUsage ? 2 : 0) + (showSubscription ? 1 : 0)} className="px-4 py-8 text-center text-slate-400">
                   Tidak ada pengguna yang cocok.
                 </td>
               </tr>
