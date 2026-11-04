@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminShell from "@/components/AdminShell";
+import Markdown from "@/components/Markdown";
 import { db } from "@/db";
 import { auditLogs, conversations, messages, usageLogs, user } from "@/db/schema";
 import { requireAdmin } from "@/lib/guards";
@@ -51,8 +52,8 @@ export default async function AdminRiwayatDetail({ params }: { params: Promise<{
         </p>
         {msgs.map((m, i) => (
           <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm shadow-sm ${m.role === "user" ? "rounded-tr-sm bg-navy text-white" : "rounded-tl-sm border border-slate-200 bg-white"}`}>
-              {m.content}
+            <div className={`min-w-0 max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${m.role === "user" ? "whitespace-pre-wrap rounded-tr-sm bg-navy text-white" : "rounded-tl-sm border border-slate-200 bg-white"}`}>
+              {m.role === "user" ? m.content : <Markdown>{m.content}</Markdown>}
               <p className={`mt-1.5 text-[10px] ${m.role === "user" ? "text-blue-200" : "text-slate-400"}`}>
                 {m.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: TZ })}
               </p>
