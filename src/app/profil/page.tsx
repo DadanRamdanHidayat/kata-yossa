@@ -25,7 +25,10 @@ export default async function ProfilPage() {
         <p className="text-xs text-slate-500">
           Percakapan Anda dapat ditinjau oleh admin sesuai kebijakan privasi Kata Yossa.
         </p>
-        <SignOutButton className="bg-red-50 !text-red-600 hover:!bg-red-100" />
+        <div className="flex flex-wrap gap-3">
+          <SignOutButton className="bg-red-50 !text-red-600 hover:!bg-red-100" />
+          <SignOutButton forgetDevice label="Keluar dan hapus akses perangkat ini" className="bg-slate-100 !text-slate-600 hover:!bg-slate-200" />
+        </div>
       </div>
     </AppShell>
   );
